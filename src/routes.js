@@ -123,33 +123,33 @@ const routes = [
     path: "sites/view-profile",
     component: <ProtectedRoute element={<SiteProfileDetail />} />,
   },
-  {
-    name: "Smart OLT",
-    layout: "/admin",
-    icon: <FaGlobe className="h-6 w-6" />,
-    subRoutes: [
-      {
-        name: "Speed Profile",
-        path: "smart-olt/tcont-traffic",
-        icon: <MdCircle className="h-6 w-6" />,
-      },
-      {
-        name: "Onu Type",
-        path: "smart-olt/onu-type",
-        icon: <MdCircle className="h-6 w-6" />,
-      },
-      {
-        name: "OLT Master",
-        path: "smart-olt/master",
-        icon: <MdCircle className="h-6 w-6" />,
-      },
-      {
-        name: "OLT Device",
-        path: "smart-olt/device",
-        icon: <MdCircle className="h-6 w-6" />,
-      },
-    ],
-  },
+  // {
+  //   name: "Smart OLT",
+  //   layout: "/admin",
+  //   icon: <FaGlobe className="h-6 w-6" />,
+  //   subRoutes: [
+  //     {
+  //       name: "Speed Profile",
+  //       path: "smart-olt/tcont-traffic",
+  //       icon: <MdCircle className="h-6 w-6" />,
+  //     },
+  //     {
+  //       name: "Onu Type",
+  //       path: "smart-olt/onu-type",
+  //       icon: <MdCircle className="h-6 w-6" />,
+  //     },
+  //     {
+  //       name: "OLT Master",
+  //       path: "smart-olt/master",
+  //       icon: <MdCircle className="h-6 w-6" />,
+  //     },
+  //     {
+  //       name: "OLT Device",
+  //       path: "smart-olt/device",
+  //       icon: <MdCircle className="h-6 w-6" />,
+  //     },
+  //   ],
+  // },
 
   {
     name: "Administrator",
@@ -160,39 +160,39 @@ const routes = [
   },
 
   //HIDDEN MENU
-  {
-    name: "View Device",
-    layout: "/admin",
-    path: "/smart-olt/device/view-detail/:deviceId",
-    component: <ProtectedRoute element={<ViewDetailDevice />} />,
-  },
-  {
-    name: "Speed Profile",
-    layout: "/admin",
-    path: "smart-olt/tcont-traffic",
-    icon: <MdPerson className="h-6 w-6" />,
-    component: <ProtectedRoute element={<OltProfile />} />,
-  },
-  {
-    name: "Onu Type",
-    layout: "/admin",
-    path: "smart-olt/onu-type",
-    icon: <MdPerson className="h-6 w-6" />,
-    component: <ProtectedRoute element={<OltOnuType />} />,
-  },
-  {
-    name: "OLT Master",
-    layout: "/admin",
-    path: "smart-olt/master",
-    icon: <MdPerson className="h-6 w-6" />,
-    component: <ProtectedRoute element={<OltMaster />} />,
-  },
-  {
-    name: "OLT Device",
-    layout: "/admin",
-    path: "smart-olt/device",
-    icon: <MdPerson className="h-6 w-6" />,
-    component: <ProtectedRoute element={<OltDevice />} />,
-  },
+  // {
+  //   name: "View Device",
+  //   layout: "/admin",
+  //   path: "/smart-olt/device/view-detail/:deviceId",
+  //   component: <ProtectedRoute element={<ViewDetailDevice />} />,
+  // },
+  // {
+  //   name: "Speed Profile",
+  //   layout: "/admin",
+  //   path: "smart-olt/tcont-traffic",
+  //   icon: <MdPerson className="h-6 w-6" />,
+  //   component: <ProtectedRoute element={<OltProfile />} />,
+  // },
+  // {
+  //   name: "Onu Type",
+  //   layout: "/admin",
+  //   path: "smart-olt/onu-type",
+  //   icon: <MdPerson className="h-6 w-6" />,
+  //   component: <ProtectedRoute element={<OltOnuType />} />,
+  // },
+  // {
+  //   name: "OLT Master",
+  //   layout: "/admin",
+  //   path: "smart-olt/master",
+  //   icon: <MdPerson className="h-6 w-6" />,
+  //   component: <ProtectedRoute element={<OltMaster />} />,
+  // },
+  // {
+  //   name: "OLT Device",
+  //   layout: "/admin",
+  //   path: "smart-olt/device",
+  //   icon: <MdPerson className="h-6 w-6" />,
+  //   component: <ProtectedRoute element={<OltDevice />} />,
+  // },
 ];
 export default routes;
