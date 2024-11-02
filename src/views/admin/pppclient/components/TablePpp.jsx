@@ -29,6 +29,9 @@ import { BeatLoader } from "react-spinners";
 import { useNavigate, useLocation } from "react-router-dom";
 import { DataContext } from "../../../../utils/DataContext";
 import { jwtDecode } from "jwt-decode";
+// import { useExport } from "./useExport";
+import axiosInstance from "utils/axiosInstance";
+import * as XLSX from "xlsx";
 
 const TABLE_HEAD = [
   "No",
@@ -46,6 +49,7 @@ export function TablePpp() {
   const [openEdit, setOpenEdit] = useState(false);
   const [siteOptions, setSiteOptions] = useState([]);
   const { data, refetch } = useData();
+  // const { data: dataExport } = useExport();
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState(null);
@@ -209,8 +213,6 @@ export function TablePpp() {
 
         const responseData = await axios.get(`${BASE_URL}/sites`, config);
 
-        console.log(responseData);
-
         if (responseData && responseData.data) {
           setSiteOptions([
             { value: "", label: "Select Site Location" }, // Added default option
@@ -230,6 +232,106 @@ export function TablePpp() {
 
   const handleSiteChange = (event) => {
     setSiteId(event.target.value); // Now properly sets the siteId in DataContext
+  };
+
+  const handleExport = async () => {
+    try {
+      const token = localStorage.getItem("access_token");
+
+      // Create query parameters object
+      const params = {
+        page: 1,
+        per_page: data?.total,
+        ...(filterConfiguration && { configuration: filterConfiguration }),
+        ...(filterStatus && { status: filterStatus }),
+        ...(filterSearch && { search: filterSearch }),
+        ...(siteId && { site_id: siteId }),
+      };
+
+      // Convert params object to query string
+      const queryString = Object.keys(params)
+        .filter((key) => params[key] !== undefined && params[key] !== "")
+        .map(
+          (key) =>
+            `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`
+        )
+        .join("&");
+
+      const response = await toast.promise(
+        axiosInstance.get(`${BASE_URL}/clientppp?${queryString}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }),
+        {
+          pending: "Downloading...",
+          success: "Download Successfully!",
+          error: "Export failed! Please try again.",
+        }
+      );
+
+      // Format the data for Excel
+      const formattedData = response.data.data.map((item) => ({
+        // "Client ID": item.client_id,
+        Name: item.name,
+        Password: item.password,
+        Profile: item.profile,
+        Status: item.status.charAt(0).toUpperCase() + item.status.slice(1),
+        "Service Type": item.service_type,
+        Configuration:
+          item.configuration.charAt(0).toUpperCase() +
+          item.configuration.slice(1),
+        Comment: item.comment,
+        // "Mikrotik ID": item.mikrotik_id,
+        // "Site ID": item.site_id,
+        // "Reference ID": item.ref_id,
+        // "Created At": item.created_at,
+        // "Created By": item.created_by,
+        // "Last Update At": item.last_update_at,
+        // "Last Update By": item.last_update_by,
+      }));
+
+      // Create worksheet
+      const ws = XLSX.utils.json_to_sheet(formattedData);
+
+      // Create column widths
+      const colWidths = [
+        // { wch: 10 }, // Client ID
+        { wch: 30 }, // Name
+        { wch: 15 }, // Password
+        { wch: 15 }, // Profile
+        { wch: 10 }, // Status
+        { wch: 15 }, // Service Type
+        { wch: 15 }, // Configuration
+        { wch: 50 }, // Comment
+        // { wch: 10 }, // Mikrotik ID
+        // { wch: 10 }, // Site ID
+        // { wch: 10 }, // Reference ID
+        // { wch: 20 }, // Created At
+        // { wch: 15 }, // Created By
+        // { wch: 20 }, // Last Update At
+        // { wch: 15 }, // Last Update By
+      ];
+
+      ws["!cols"] = colWidths;
+
+      // Create workbook
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "PPP Clients");
+
+      // Generate filename with current date
+      // const currentDate = new Date().toISOString().split("T")[0];
+      // const fileName = `Data_Clients_${currentDate}.xlsx`;
+
+      const fileName = `Data_Clients.xlsx`;
+
+      // Save the file
+      XLSX.writeFile(wb, fileName);
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("Export failed! Please try again.");
+    }
   };
 
   return (
@@ -259,6 +361,14 @@ export function TablePpp() {
                 >
                   <UserPlusIcon strokeWidth={2} className="h-4 w-4" /> Create
                   PPP
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="sm"
+                  className=" flex items-center gap-2 bg-blue-600 text-white dark:bg-brandLinear dark:text-white"
+                  onClick={handleExport}
+                >
+                  Export Data
                 </Button>
               </div>
             )}

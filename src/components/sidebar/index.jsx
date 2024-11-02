@@ -32,6 +32,7 @@ const Sidebar = ({ open, onClose }) => {
       "Onu Type",
       "OLT Master",
       "OLT Device",
+      "ONT Device",
     ];
     if (excludeRoutes.includes(route.name)) {
       return false;

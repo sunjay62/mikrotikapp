@@ -34,6 +34,7 @@ import OltOnuType from "views/admin/oltonutype";
 import OltMaster from "views/admin/oltmaster";
 import OltDevice from "views/admin/oltdevice";
 import ViewDetailDevice from "views/admin/oltdevice/view-detail";
+import OntDevice from "views/admin/ontdevice";
 
 const routes = [
   {
@@ -145,7 +146,12 @@ const routes = [
   //     },
   //     {
   //       name: "OLT Device",
-  //       path: "smart-olt/device",
+  //       path: "smart-olt/olt-device",
+  //       icon: <MdCircle className="h-6 w-6" />,
+  //     },
+  //     {
+  //       name: "ONT Device",
+  //       path: "smart-olt/ont-device",
   //       icon: <MdCircle className="h-6 w-6" />,
   //     },
   //   ],
@@ -190,9 +196,16 @@ const routes = [
   // {
   //   name: "OLT Device",
   //   layout: "/admin",
-  //   path: "smart-olt/device",
+  //   path: "smart-olt/olt-device",
   //   icon: <MdPerson className="h-6 w-6" />,
   //   component: <ProtectedRoute element={<OltDevice />} />,
+  // },
+  // {
+  //   name: "ONT Device",
+  //   layout: "/admin",
+  //   path: "smart-olt/ont-device",
+  //   icon: <MdPerson className="h-6 w-6" />,
+  //   component: <ProtectedRoute element={<OntDevice />} />,
   // },
 ];
 export default routes;
