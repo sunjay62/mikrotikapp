@@ -20,7 +20,6 @@ const ClientChartCard = () => {
           },
         };
         const response = await axios.get(`${BASE_URL}/dashboard`, config);
-        console.log(response.data);
         setConnected(response.data.mikrotik.connected);
         setDisconnected(response.data.mikrotik.disconnected);
       } catch (error) {

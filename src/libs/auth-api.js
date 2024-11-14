@@ -5,4 +5,4 @@ export const BASE_URL_OLT = "https://mmwifian.konekin.my.id/olt";
 export const BASE_URL_prod = "http://mikrotik.idenigma.id:5080";
 
 // pake api ini kalo mau dev
-export const BASE_URL_dev = "https://mmwifian.konekin.my.id";
+export const BASE_URL_DEV = "https://mmwifian.konekin.my.id";

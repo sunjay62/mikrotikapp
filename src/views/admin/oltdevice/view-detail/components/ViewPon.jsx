@@ -31,7 +31,6 @@ const getStatusColor = (status) => {
 };
 
 const TABLE_HEAD = [
-  // "No",
   "Port",
   "Description",
   "State",
@@ -43,14 +42,13 @@ const TABLE_HEAD = [
   "",
 ];
 
-const ITEMS_PER_PAGE = 5;
-
 export function ViewPon() {
   const { deviceId } = useParams();
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [searchTerms, setSearchTerms] = useState({});
   const [currentPages, setCurrentPages] = useState({});
+  const [itemsPerPage, setItemsPerPage] = useState(5);
   const [decodedToken, setDecodedToken] = useState({});
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -146,22 +144,57 @@ export function ViewPon() {
     setFilteredData(updatedFilteredData);
   };
 
-  const roleHidden = decodedToken.role === "teknisi";
-
-  const handleViewDevice = (deviceId) => {
-    navigate(`/admin/smart-olt/device/view-detail/${deviceId}`);
+  const handleChangeItemsPerPage = (e, slotId) => {
+    const newItemsPerPage = parseInt(e.target.value);
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPages((prev) => ({ ...prev, [slotId]: 1 }));
   };
 
   const handlePageChange = (slotId, newPage) => {
     setCurrentPages((prev) => ({ ...prev, [slotId]: newPage }));
   };
 
+  const renderPageNumbers = (slotId, totalPages) => {
+    const currentPage = currentPages[slotId] || 1;
+    const pageNumbers = [];
+    const maxVisiblePages = 3;
+
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(
+        <Button
+          key={i}
+          className={`px-3 ${
+            currentPage === i
+              ? "bg-blue-500 text-white dark:bg-blue-600"
+              : "dark:border-white dark:text-white"
+          }`}
+          variant={currentPage === i ? "filled" : "outlined"}
+          size="sm"
+          onClick={() => handlePageChange(slotId, i)}
+        >
+          {i}
+        </Button>
+      );
+    }
+
+    return pageNumbers;
+  };
+
   const renderTable = (cardData) => {
-    const startIndex = (currentPages[cardData.id] - 1) * ITEMS_PER_PAGE;
+    const currentPage = currentPages[cardData.id] || 1;
+    const startIndex = (currentPage - 1) * itemsPerPage;
     const paginatedData = cardData.list_port.slice(
       startIndex,
-      startIndex + ITEMS_PER_PAGE
+      startIndex + itemsPerPage
     );
+    const totalPages = Math.ceil(cardData.list_port.length / itemsPerPage);
 
     return (
       <div className="relative">
@@ -183,7 +216,6 @@ export function ViewPon() {
             </thead>
             <tbody>
               {paginatedData.map((item, index) => {
-                const actualIndex = startIndex + index + 1;
                 const classes =
                   index === paginatedData.length - 1
                     ? "p-4"
@@ -191,13 +223,6 @@ export function ViewPon() {
 
                 return (
                   <tr key={item.id} className="border-b">
-                    {/* <td className={classes}>
-                      <div className="flex items-center gap-3">
-                        <div className="flex flex-col">
-                          <p className="font-normal">{actualIndex}</p>
-                        </div>
-                      </div>
-                    </td> */}
                     <td className={classes}>
                       <div className="flex items-center gap-3">
                         <div className="flex flex-col">
@@ -268,19 +293,7 @@ export function ViewPon() {
                         </div>
                       </div>
                     </td>
-                    {/* <td className={`${classes}`}>
-                      {!roleHidden && (
-                        <Tooltip content="View" className="bg-gray-700">
-                          <IconButton
-                            variant="text"
-                            className="ml-2 border bg-green-50 hover:bg-green-100"
-                            onClick={() => handleViewDevice(item.id)}
-                          >
-                            <AdjustmentsHorizontalIcon className="h-5 w-5 text-green-400" />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                    </td> */}
+                    <td className={classes}></td>
                   </tr>
                 );
               })}
@@ -289,32 +302,44 @@ export function ViewPon() {
         </div>
         <div className="sticky bottom-0 left-0 right-0 bg-white dark:bg-navy-700">
           <CardFooter className="border-blue-gray-50 flex items-center justify-between border-t p-4">
-            <p className="font-normal">
-              Page {currentPages[cardData.id]} of{" "}
-              {Math.ceil(cardData.list_port.length / ITEMS_PER_PAGE)} -{" "}
-              <span>Total {cardData.list_port.length} Items</span>
-            </p>
+            <div className="flex items-center">
+              <p className="text-blue-gray-600 font-normal dark:text-white">
+                Page {currentPage} of {totalPages} - Total{" "}
+                {cardData.list_port.length} Items
+              </p>
+              <select
+                className="border-blue-gray-50 ml-4 rounded border p-1 dark:bg-navy-700 dark:text-white"
+                value={itemsPerPage}
+                onChange={(e) => handleChangeItemsPerPage(e, cardData.id)}
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
             <div className="flex gap-2">
               <Button
+                className="dark:border-white dark:text-white"
                 variant="outlined"
                 size="sm"
-                onClick={() =>
-                  handlePageChange(cardData.id, currentPages[cardData.id] - 1)
-                }
-                disabled={currentPages[cardData.id] === 1}
+                onClick={() => handlePageChange(cardData.id, currentPage - 1)}
+                disabled={currentPage === 1}
               >
                 Previous
               </Button>
+
+              <div className="flex gap-1">
+                {renderPageNumbers(cardData.id, totalPages)}
+              </div>
+
               <Button
+                className="dark:border-white dark:text-white"
                 variant="outlined"
                 size="sm"
-                onClick={() =>
-                  handlePageChange(cardData.id, currentPages[cardData.id] + 1)
-                }
-                disabled={
-                  currentPages[cardData.id] * ITEMS_PER_PAGE >=
-                  cardData.list_port.length
-                }
+                onClick={() => handlePageChange(cardData.id, currentPage + 1)}
+                disabled={currentPage === totalPages}
               >
                 Next
               </Button>

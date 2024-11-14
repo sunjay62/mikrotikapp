@@ -513,10 +513,10 @@ const ViewDevice = () => {
           <div className="mb-8 flex items-center justify-between gap-8">
             <div>
               <h1 className="text-xl font-bold" color="blue-gray">
-                Device {deviceData.name}
+                ONT Device {deviceData.name}
               </h1>
               <p color="gray" className="mt-1 font-normal">
-                See information about all this device
+                See information about all this ONT device
               </p>
             </div>
             {/* <Button

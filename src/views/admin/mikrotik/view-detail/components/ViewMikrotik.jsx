@@ -150,7 +150,7 @@ const ViewMikrotik = () => {
                 MikroTik {name}
               </h1>
               <p color="gray" className="mt-1 font-normal">
-                See information about all this device
+                See information about all this MikroTik device
               </p>
             </div>
           </div>

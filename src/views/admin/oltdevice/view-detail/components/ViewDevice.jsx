@@ -98,7 +98,7 @@ const ViewDevice = () => {
       };
 
       const responseData = await axiosInstance.post(
-        `${BASE_URL}/olt/devices/info`,
+        `${BASE_URL_OLT}/devices/info`,
         formData,
         config
       );

@@ -41,7 +41,7 @@ const useUpdate = ({ handleOpenEdit, openEdit, user }) => {
     }
   }, [user]);
 
-  const handleCreate = async () => {
+  const handleUpdate = async () => {
     try {
       const token = localStorage.getItem("access_token");
 
@@ -207,7 +207,7 @@ const useUpdate = ({ handleOpenEdit, openEdit, user }) => {
         <Button
           key="confirm"
           className="bg-blue-500 text-white"
-          onClick={handleCreate}
+          onClick={handleUpdate}
           disabled={!inputsNotEmpty}
         >
           Confirm

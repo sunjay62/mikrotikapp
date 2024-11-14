@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon, PlusIcon } from "@heroicons/react/24/outline";
 import {
   TrashIcon,
   PencilSquareIcon,
   AdjustmentsHorizontalIcon,
+  PlusCircleIcon,
 } from "@heroicons/react/24/solid";
-import EditUplink from "./UpdateUplink";
+import AddVlan from "./useCreate";
+import EditVlan from "./useUpdate";
 import {
   Card,
   CardHeader,
@@ -23,12 +25,13 @@ import LoadingTable from "components/loading";
 import { jwtDecode } from "jwt-decode";
 import axiosInstance from "utils/axiosInstance";
 import { useParams, useNavigate } from "react-router-dom";
+import { useData } from "./useData";
 
 const getStatusColor = (status) => {
   switch (status) {
-    case "up":
+    case true:
       return "bg-green-100 min-w-24  text-green-600";
-    case "down":
+    case false:
       return "bg-red-100 min-w-24  text-red-600";
     default:
       return "bg-gray-100 text-gray-600";
@@ -37,26 +40,26 @@ const getStatusColor = (status) => {
 
 const TABLE_HEAD = [
   "No",
-  "UPLink Port",
+  "Name",
+  "Vlan ID",
+  "ONU Profile",
+  "Multicast IGMP",
   "Description",
-  "Port Type",
-  "Status",
-  "Port",
-  "Mode : Tagged VLANs",
   "",
 ];
 
-export function ViewUplink() {
+export function ViewVlan() {
   const { deviceId } = useParams();
   const [currentPage, setCurrentPage] = useState(1);
-  const [data, setData] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [decodedToken, setDecodedToken] = useState({});
   const [loading, setLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [selectedUplink, setSelectedUplink] = useState(null);
-  const [openEdit, setOpenEdit] = useState(false);
   const navigate = useNavigate();
+  const { data, refetch } = useData();
+  const [open, setOpen] = useState(false);
+  const [openEdit, setOpenEdit] = useState(false);
+  const [dataVlan, setDataVlan] = useState("");
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -110,9 +113,33 @@ export function ViewUplink() {
     }
   };
 
-  const fetchData = async () => {
+  useEffect(() => {
+    const accessToken = localStorage.getItem("access_token");
+    if (accessToken) {
+      try {
+        const decodedToken = jwtDecode(accessToken);
+        setDecodedToken(decodedToken);
+      } catch (error) {
+        toast.error("Your session is expired, please login again.");
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        await handleRefresh();
+      } catch (error) {
+        console.log(error);
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const handleRefresh = async () => {
     try {
-      setLoading(true);
       const accessToken = localStorage.getItem("access_token");
 
       if (!accessToken) {
@@ -130,69 +157,42 @@ export function ViewUplink() {
       };
 
       const responseData = await axiosInstance.post(
-        `${BASE_URL_OLT}/devices/card/uplink`,
+        `${BASE_URL_OLT}/devices/vlan/sync`,
         formData,
         config
       );
 
-      setData(responseData.data);
-      setFilteredUsers(responseData.data);
+      if (responseData.status === 200) {
+        await refetch();
+        setRefreshTrigger((prev) => prev + 1);
+        setLoading(false);
+      }
     } catch (error) {
       console.log(error);
-      toast.error("Failed to fetch data");
-      throw error; // Tambahkan ini untuk propagasi error
-    } finally {
       setLoading(false);
     }
   };
 
-  // Buat fungsi refetch yang akan dipass ke UpdateUplink
-  const handleRefetchData = async () => {
-    try {
-      await fetchData();
-    } catch (error) {
-      console.error("Failed to refetch data:", error);
-    }
-  };
-
   useEffect(() => {
-    fetchData();
-  }, [refreshTrigger]);
-
-  useEffect(() => {
-    const accessToken = localStorage.getItem("access_token");
-    if (accessToken) {
-      try {
-        const decodedToken = jwtDecode(accessToken);
-        setDecodedToken(decodedToken);
-      } catch (error) {
-        toast.error("Your session is expired, please login again.");
-      }
+    if (data) {
+      setFilteredUsers(data);
     }
-  }, []);
-
-  const handleRefresh = async () => {
-    try {
-      await toast.promise(fetchData(), {
-        pending: "Refreshing ...",
-        success: "Refresh Success!",
-      });
-      setRefreshTrigger((prev) => prev + 1);
-    } catch (error) {
-      console.log(error);
-      toast.error("Failed to refresh data");
-    }
-  };
+  }, [data, refreshTrigger]);
 
   const handleSearch = (value) => {
     if (!value) {
       setFilteredUsers(data);
     } else {
+      const lowercasedValue = value.toLowerCase();
       const filtered = data.filter(
         (user) =>
-          (user.cfg_type &&
-            user.cfg_type.toLowerCase().includes(value.toLowerCase())) ||
-          (user.status && user.status.toString().includes(value))
+          (user.name && user.name.toLowerCase().includes(lowercasedValue)) ||
+          (user.vlan_id && user.vlan_id.toString().includes(value)) ||
+          (user.multicast_igmp !== undefined &&
+            ((user.multicast_igmp === true &&
+              "enable".includes(lowercasedValue)) ||
+              (user.multicast_igmp === false &&
+                "disable".includes(lowercasedValue))))
       );
       setFilteredUsers(filtered);
     }
@@ -205,9 +205,53 @@ export function ViewUplink() {
     navigate(`/admin/smart-olt/device/view-detail/${deviceId}`);
   };
 
+  const handleOpen = () => setOpen(!open);
+
   const handleOpenEdit = (items) => {
-    setSelectedUplink(items);
+    setDataVlan(items);
     setOpenEdit(!openEdit);
+  };
+
+  const handleDelete = async (idVlans) => {
+    Swal.fire({
+      title: "Delete Vlan",
+      text: "Are you sure to delete this Vlan?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        const token = localStorage.getItem("access_token");
+
+        try {
+          const config = {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          };
+
+          const data = { id: idVlans };
+
+          await toast.promise(
+            axiosInstance.delete(`${BASE_URL_OLT}/devices/vlan/action`, {
+              ...config,
+              data,
+            }),
+            {
+              pending: "Deleting ...",
+              success: "Deleted Successfully!",
+            }
+          );
+
+          refetch();
+        } catch (error) {
+          toast.error("Error deleting Vlan");
+          console.error(error);
+        }
+      }
+    });
   };
 
   return (
@@ -220,10 +264,10 @@ export function ViewUplink() {
         >
           <div className="mb-8 items-center justify-between gap-8">
             <div className="text-xl font-bold text-navy-700 dark:text-white">
-              OLT UPLink Port List
+              OLT Vlans List
             </div>
             <p color="gray" className="mt-1 font-normal">
-              See information about all OLT UPLink Port
+              See information about all OLT Vlans
             </p>
           </div>
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
@@ -243,9 +287,10 @@ export function ViewUplink() {
                   variant="outlined"
                   size="sm"
                   className="flex items-center gap-2 bg-blue-600 text-white dark:bg-brandLinear dark:text-white"
-                  onClick={handleRefresh}
+                  onClick={handleOpen}
                 >
-                  Refresh OLT UPLink Port
+                  <PlusIcon className="h-5 w-5" />
+                  Add Vlan
                 </Button>
               </div>
             )}
@@ -310,18 +355,16 @@ export function ViewUplink() {
                       <td className={classes}>
                         <div className="flex items-center gap-3">
                           <div className="flex flex-col">
-                            <p className="font-normal">
-                              {items.description === "none"
-                                ? "-"
-                                : items.description || "-"}
-                            </p>
+                            <p className="font-normal">{items.vlan_id}</p>
                           </div>
                         </div>
                       </td>
                       <td className={classes}>
                         <div className="flex items-center gap-3">
                           <div className="flex flex-col">
-                            <p className="font-normal">{items.port_type}</p>
+                            <p className="font-normal">
+                              {items.onu_profile || "-"}
+                            </p>
                           </div>
                         </div>
                       </td>
@@ -330,12 +373,16 @@ export function ViewUplink() {
                           <div className="flex flex-col">
                             <p className="font-normal">
                               <div
-                                className={`flex items-center justify-center gap-3 rounded-full px-2 py-1 font-bold uppercase ${getStatusColor(
-                                  items.status
+                                className={`flex items-center justify-center gap-3 rounded-full px-2 py-1 font-bold  ${getStatusColor(
+                                  items.multicast_igmp
                                 )}`}
                               >
                                 <p className="text-black text-sm font-bold">
-                                  {items.status || "-"}
+                                  {items.multicast_igmp === true
+                                    ? "Enable"
+                                    : items.multicast_igmp === false
+                                    ? "Disable"
+                                    : "-"}
                                 </p>
                               </div>
                             </p>
@@ -345,38 +392,39 @@ export function ViewUplink() {
                       <td className={classes}>
                         <div className="flex items-center gap-3">
                           <div className="flex flex-col">
-                            <p className="font-normal">{items.port}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className={classes}>
-                        <div className="w flex items-center gap-3">
-                          <div className="flex flex-col">
                             <p className="font-normal">
-                              {items.mode} : {items.vlan_tag}
+                              {items.description === "none" ||
+                              items.description === "N/A"
+                                ? "-"
+                                : items.description || "-"}
                             </p>
                           </div>
                         </div>
                       </td>
-                      <td className={`${classes}`}>
-                        <div className="flex justify-end">
-                          {!roleHidden && (
-                            <>
-                              <Tooltip
-                                content="Configure"
-                                className="bg-gray-700"
+                      <td>
+                        <>
+                          <Tooltip content="Edit" className="bg-gray-700">
+                            <IconButton
+                              variant="text"
+                              className="ml-2 border bg-blue-50 hover:bg-blue-100 dark:bg-blue-800 dark:hover:bg-blue-200"
+                              onClick={() => handleOpenEdit(items)}
+                            >
+                              <PencilSquareIcon className="h-5 w-5 text-blue-400" />
+                            </IconButton>
+                          </Tooltip>
+
+                          {!shouldHideDeleteButton && !roleHidden && (
+                            <Tooltip content="Delete" className="bg-gray-700">
+                              <IconButton
+                                variant="text"
+                                className="dark:bg-red-00 ml-2 border bg-red-50 hover:bg-red-100 dark:hover:bg-blue-200"
+                                onClick={() => handleDelete(items.id)}
                               >
-                                <IconButton
-                                  variant="text"
-                                  className="ml-2 border bg-blue-50 hover:bg-blue-100 dark:bg-blue-800 dark:hover:bg-blue-200"
-                                  onClick={() => handleOpenEdit(items)}
-                                >
-                                  <PencilSquareIcon className="h-5 w-5 text-blue-400" />
-                                </IconButton>
-                              </Tooltip>
-                            </>
+                                <TrashIcon className="h-5 w-5 text-red-500" />
+                              </IconButton>
+                            </Tooltip>
                           )}
-                        </div>
+                        </>
                       </td>
                     </tr>
                   );
@@ -428,16 +476,15 @@ export function ViewUplink() {
           </div>
         </CardFooter>
       </Card>
-      {selectedUplink && (
-        <EditUplink
-          openEdit={openEdit}
-          handleOpenEdit={handleOpenEdit}
-          items={selectedUplink}
-          onRefetch={handleRefetchData} // Tambahkan prop ini
-        />
-      )}
+      <AddVlan open={open} handleOpen={handleOpen} refetch={refetch} />
+      <EditVlan
+        openEdit={openEdit}
+        handleOpenEdit={handleOpenEdit}
+        refetch={refetch}
+        dataVlan={dataVlan}
+      />
     </>
   );
 }
 
-export default ViewUplink;
+export default ViewVlan;

@@ -24,7 +24,10 @@ export const useData = () => {
           },
         };
 
-        const responseData = await axios.get(`${BASE_URL}/userlogin`, config);
+        const responseData = await axios.get(
+          `${BASE_URL_DEV}/userlogin`,
+          config
+        );
 
         return responseData.data;
       } catch (error) {

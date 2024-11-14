@@ -19,12 +19,64 @@ const TABLE_HEAD = ["No", "Name", ""];
 export function ViewOntList() {
   const { deviceId } = useParams();
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(5);
   const [data, setData] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const navigate = useNavigate();
+
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems =
+    filteredUsers.length > 0
+      ? filteredUsers.slice(indexOfFirstItem, indexOfLastItem)
+      : [];
+
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+
+  const handleChangeItemsPerPage = (event) => {
+    const newItemsPerPage = parseInt(event.target.value);
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
+
+  const renderPageNumbers = () => {
+    const pageNumbers = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    // Adjust start page if we're near the end
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(
+        <Button
+          key={i}
+          variant={currentPage === i ? "filled" : "outlined"}
+          size="sm"
+          className={`px-3 ${
+            currentPage === i
+              ? "bg-blue-500 text-white dark:bg-blue-600"
+              : "dark:border-white dark:text-white"
+          }`}
+          onClick={() => paginate(i)}
+        >
+          {i}
+        </Button>
+      );
+    }
+    return pageNumbers;
+  };
+
+  const paginate = (pageNumber) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -77,12 +129,6 @@ export function ViewOntList() {
     }
     setCurrentPage(1);
   };
-
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
-
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
     <Card className="mt-8 h-full w-full rounded-none dark:bg-navy-700 dark:text-white">
@@ -163,29 +209,42 @@ export function ViewOntList() {
         </table>
       </CardBody>
       <CardFooter className="border-blue-gray-50 flex items-center justify-between border-t p-4">
-        <p className="font-normal">
-          Page {currentPage} of {Math.ceil(filteredUsers.length / itemsPerPage)}{" "}
-          - Total {filteredUsers.length} Items
-        </p>
+        <div className="flex items-center">
+          <p className="text-blue-gray-600 font-normal dark:text-white">
+            Page {currentPage} of {totalPages} - Total {filteredUsers.length}{" "}
+            Items
+          </p>
+          <select
+            className="border-blue-gray-50 ml-4 rounded border p-1 dark:bg-navy-700 dark:text-white"
+            value={itemsPerPage}
+            onChange={handleChangeItemsPerPage}
+          >
+            <option value={5}>5</option>
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+        </div>
         <div className="flex gap-2">
           <Button
             className="dark:border-white dark:text-white"
             variant="outlined"
             size="sm"
             onClick={() => paginate(currentPage - 1)}
-            disabled={currentPage === 1 || filteredUsers.length === 0}
+            disabled={currentPage === 1}
           >
             Previous
           </Button>
+
+          <div className="flex gap-1">{renderPageNumbers()}</div>
+
           <Button
             className="dark:border-white dark:text-white"
             variant="outlined"
             size="sm"
             onClick={() => paginate(currentPage + 1)}
-            disabled={
-              indexOfLastItem >= filteredUsers.length ||
-              filteredUsers.length === 0
-            }
+            disabled={currentPage === totalPages}
           >
             Next
           </Button>

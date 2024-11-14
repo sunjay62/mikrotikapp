@@ -334,6 +334,111 @@ export function TablePpp() {
     }
   };
 
+  const renderPageNumbers = () => {
+    const totalPages = data?.pages || 0;
+    const currentPageNum = currentPage;
+    const pageNumbers = [];
+
+    // Always show first page
+    pageNumbers.push(
+      <Button
+        key={1}
+        className={`h-8 w-8 p-0 ${
+          currentPageNum === 1
+            ? "bg-blue-500 text-white"
+            : "dark:border-white dark:text-white"
+        }`}
+        variant={currentPageNum === 1 ? "filled" : "outlined"}
+        size="sm"
+        onClick={() => paginate(1)}
+      >
+        1
+      </Button>
+    );
+
+    // Logic for showing page numbers with ellipsis
+    if (totalPages > 7) {
+      if (currentPageNum > 4) {
+        pageNumbers.push(
+          <span key="ellipsis1" className="mx-2">
+            ...
+          </span>
+        );
+      }
+
+      // Show pages around current page
+      for (
+        let i = Math.max(2, currentPageNum - 2);
+        i <= Math.min(totalPages - 1, currentPageNum + 2);
+        i++
+      ) {
+        pageNumbers.push(
+          <Button
+            key={i}
+            className={`h-8 w-8 p-0 ${
+              currentPageNum === i
+                ? "bg-blue-500 text-white"
+                : "dark:border-white dark:text-white"
+            }`}
+            variant={currentPageNum === i ? "filled" : "outlined"}
+            size="sm"
+            onClick={() => paginate(i)}
+          >
+            {i}
+          </Button>
+        );
+      }
+
+      if (currentPageNum < totalPages - 3) {
+        pageNumbers.push(
+          <span key="ellipsis2" className="mx-2">
+            ...
+          </span>
+        );
+      }
+
+      // Always show last page if there are more than one page
+      if (totalPages > 1) {
+        pageNumbers.push(
+          <Button
+            key={totalPages}
+            className={`h-8 w-8 p-0 ${
+              currentPageNum === totalPages
+                ? "bg-blue-500 text-white"
+                : "dark:border-white dark:text-white"
+            }`}
+            variant={currentPageNum === totalPages ? "filled" : "outlined"}
+            size="sm"
+            onClick={() => paginate(totalPages)}
+          >
+            {totalPages}
+          </Button>
+        );
+      }
+    } else {
+      // If less than 7 pages, show all page numbers
+      for (let i = 2; i <= totalPages; i++) {
+        pageNumbers.push(
+          <Button
+            key={i}
+            className={`h-8 w-8 p-0 ${
+              currentPageNum === i
+                ? "bg-blue-500 text-white"
+                : "dark:border-white dark:text-white"
+            }`}
+            variant={currentPageNum === i ? "filled" : "outlined"}
+            size="sm"
+            onClick={() => paginate(i)}
+          >
+            {i}
+          </Button>
+        );
+      }
+    }
+
+    return pageNumbers;
+  };
+
   return (
     <>
       <Card className="mt-8 h-full w-full rounded-3xl  dark:bg-navy-700 dark:text-white">
@@ -666,6 +771,9 @@ export function TablePpp() {
             >
               Previous
             </Button>
+
+            <div className="flex gap-1">{renderPageNumbers()}</div>
+
             <Button
               className="dark:border-white dark:text-white"
               variant="outlined"

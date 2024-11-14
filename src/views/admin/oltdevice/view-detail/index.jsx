@@ -7,14 +7,14 @@ import { ArrowLeftIcon } from "@heroicons/react/24/solid";
 import ViewPon from "./components/ViewPon";
 import ViewUplink from "./components/ViewUplink";
 import ViewOntList from "./components/ViewOntList";
-import ViewVlan from "./components/ViewVlan";
+import ViewVlan from "./components/vlan-components/ViewVlan";
 
 const ViewDetailDevice = () => {
   const [activeView, setActiveView] = useState("detail");
   const navigate = useNavigate();
 
   const handleBack = () => {
-    navigate(`/admin/smart-olt/device`);
+    navigate(`/admin/smart-olt/olt-device`);
   };
 
   return (
