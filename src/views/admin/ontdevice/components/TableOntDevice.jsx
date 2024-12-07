@@ -33,11 +33,12 @@ import { useNavigate } from "react-router-dom";
 const TABLE_HEAD = [
   "No",
   "Name",
-  "IP Host",
-  "Telnet Port",
-  "SNMP Port",
-  "ONT Merk Version",
-  "Status",
+  "Device",
+  "Serial Number",
+  "Site",
+  "ONU",
+  "ONU Type",
+  "Description",
   "",
 ];
 
@@ -45,7 +46,6 @@ export function TableOntDevice() {
   const [open, setOpen] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(5);
   const { data, refetch } = useData();
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [selectedOnuType, setSelectedOnuType] = useState(null);
@@ -53,10 +53,60 @@ export function TableOntDevice() {
   const [length, setLength] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selectedDeviceId, setSelectedDeviceId] = useState(null);
+  const navigate = useNavigate();
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
-  const navigate = useNavigate();
+  const currentItems =
+    filteredUsers.length > 0
+      ? filteredUsers.slice(indexOfFirstItem, indexOfLastItem)
+      : [];
+
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+
+  const handleChangeItemsPerPage = (event) => {
+    const newItemsPerPage = parseInt(event.target.value);
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
+
+  const renderPageNumbers = () => {
+    const pageNumbers = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    // Adjust start page if we're near the end
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(
+        <Button
+          key={i}
+          variant={currentPage === i ? "filled" : "outlined"}
+          size="sm"
+          className={`px-3 ${
+            currentPage === i
+              ? "bg-blue-500 text-white dark:bg-blue-600"
+              : "dark:border-white dark:text-white"
+          }`}
+          onClick={() => paginate(i)}
+        >
+          {i}
+        </Button>
+      );
+    }
+    return pageNumbers;
+  };
+
+  const paginate = (pageNumber) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber);
+    }
+  };
 
   useEffect(() => {
     if (data && Array.isArray(data)) {
@@ -67,8 +117,6 @@ export function TableOntDevice() {
       setLoading(false);
     }
   }, [data]);
-
-  console.log(data);
 
   useEffect(() => {
     const accessToken = localStorage.getItem("access_token");
@@ -81,8 +129,6 @@ export function TableOntDevice() {
       }
     }
   }, []);
-
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   const handleOpen = () => setOpen(!open);
 
@@ -97,8 +143,8 @@ export function TableOntDevice() {
     const id = item.id;
 
     Swal.fire({
-      title: "Delete OLT Device",
-      text: `Are you sure to delete this ${name} OLT Device?`,
+      title: "Delete ONT Device",
+      text: `Are you sure to delete this ${name} ONT Device?`,
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#d33",
@@ -156,7 +202,7 @@ export function TableOntDevice() {
 
   const handleViewDevice = (deviceId) => {
     setSelectedDeviceId(deviceId);
-    navigate(`/admin/smart-olt/device/view-detail/${deviceId}`);
+    navigate(`/admin/smart-olt/ont-device/view-detail/${deviceId}`);
   };
 
   return (
@@ -194,7 +240,7 @@ export function TableOntDevice() {
                   className="flex items-center gap-2 bg-blue-600 text-white dark:bg-brandLinear dark:text-white"
                   onClick={handleOpen}
                 >
-                  <BsPlus strokeWidth={2} className="h-4 w-4" /> Add ONT Device
+                  <BsPlus strokeWidth={2} className="h-4 w-4" /> Register ONT
                 </Button>
               </div>
             )}
@@ -259,7 +305,7 @@ export function TableOntDevice() {
                           </div>
                         </div>
                       </td>
-                      <td className={classes}>
+                      <td className={`${classes} w-[350px]`}>
                         <div className="flex items-center gap-3">
                           <div className="flex flex-col">
                             <p
@@ -273,7 +319,7 @@ export function TableOntDevice() {
                         </div>
                       </td>
 
-                      <td className={classes}>
+                      <td className={`${classes} w-[150px]`}>
                         <div className="flex items-center gap-3">
                           <div className="flex flex-col">
                             <p
@@ -281,12 +327,12 @@ export function TableOntDevice() {
                               color="blue-gray"
                               className="font-normal"
                             >
-                              {items.host}
+                              {items.name_device}
                             </p>
                           </div>
                         </div>
                       </td>
-                      <td className={classes}>
+                      <td className={`${classes} w-[150px]`}>
                         <div className="flex items-center gap-3">
                           <div className="flex flex-col">
                             <p
@@ -294,12 +340,12 @@ export function TableOntDevice() {
                               color="blue-gray"
                               className="font-normal"
                             >
-                              {items.telnet_port}
+                              {items.sn}
                             </p>
                           </div>
                         </div>
                       </td>
-                      <td className={classes}>
+                      <td className={`${classes} w-[150px]`}>
                         <div className="flex items-center gap-3">
                           <div className="flex flex-col">
                             <p
@@ -307,12 +353,12 @@ export function TableOntDevice() {
                               color="blue-gray"
                               className="font-normal"
                             >
-                              {items.snmp_port}
+                              {items.site_name}
                             </p>
                           </div>
                         </div>
                       </td>
-                      <td className={classes}>
+                      <td className={`${classes} w-[150px]`}>
                         <div className="flex items-center gap-3">
                           <div className="flex flex-col">
                             <p
@@ -320,12 +366,12 @@ export function TableOntDevice() {
                               color="blue-gray"
                               className="font-normal"
                             >
-                              {items.info_merk.merk} - {items.info_merk.model}
+                              {items.onu_type}
                             </p>
                           </div>
                         </div>
                       </td>
-                      <td className={classes}>
+                      <td className={`${classes} w-[250px]`}>
                         <div className="flex items-center gap-3">
                           <div className="flex flex-col">
                             <p
@@ -333,7 +379,20 @@ export function TableOntDevice() {
                               color="blue-gray"
                               className="font-normal"
                             >
-                              {items.info_software.name}
+                              {items.onu}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className={`${classes} w-[150px]`}>
+                        <div className="flex items-center gap-3">
+                          <div className="flex flex-col">
+                            <p
+                              variant="small"
+                              color="blue-gray"
+                              className="font-normal"
+                            >
+                              {items.description}
                             </p>
                           </div>
                         </div>
@@ -385,30 +444,42 @@ export function TableOntDevice() {
         </CardBody>
 
         <CardFooter className="border-blue-gray-50 flex items-center justify-between border-t p-4">
-          <p variant="small" color="blue-gray" className="font-normal">
-            Page {currentPage} of{" "}
-            {Math.ceil(filteredUsers.length / itemsPerPage)} - Total {length}{" "}
-            Items
-          </p>
+          <div className="flex items-center">
+            <p className="text-blue-gray-600 font-normal dark:text-white">
+              Page {currentPage} of {totalPages} - Total {filteredUsers.length}{" "}
+              Items
+            </p>
+            <select
+              className="border-blue-gray-50 ml-4 rounded border p-1 dark:bg-navy-700 dark:text-white"
+              value={itemsPerPage}
+              onChange={handleChangeItemsPerPage}
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </div>
           <div className="flex gap-2">
             <Button
               className="dark:border-white dark:text-white"
               variant="outlined"
               size="sm"
               onClick={() => paginate(currentPage - 1)}
-              disabled={currentPage === 1 || filteredUsers.length === 0}
+              disabled={currentPage === 1}
             >
               Previous
             </Button>
+
+            <div className="flex gap-1">{renderPageNumbers()}</div>
+
             <Button
               className="dark:border-white dark:text-white"
               variant="outlined"
               size="sm"
               onClick={() => paginate(currentPage + 1)}
-              disabled={
-                indexOfLastItem >= filteredUsers.length ||
-                filteredUsers.length === 0
-              }
+              disabled={currentPage === totalPages}
             >
               Next
             </Button>

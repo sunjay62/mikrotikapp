@@ -9,7 +9,7 @@ export const useData = () => {
   const navigate = useNavigate();
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ["data-olt-device"],
+    queryKey: ["data-ont-device"],
     queryFn: async () => {
       try {
         const accessToken = localStorage.getItem("access_token");
@@ -25,11 +25,11 @@ export const useData = () => {
         };
 
         const responseData = await axiosInstance.get(
-          `${BASE_URL_OLT}/devices`,
+          `${BASE_URL_OLT}/onu/configured`,
           config
         );
 
-        return responseData.data;
+        return responseData.data.data;
       } catch (error) {
         console.log(error);
 

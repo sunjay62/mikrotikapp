@@ -26,14 +26,20 @@ export function ViewOntList() {
   const navigate = useNavigate();
 
   const [itemsPerPage, setItemsPerPage] = useState(5);
+
+  // Safely calculate pagination values with default empty array
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems =
-    filteredUsers.length > 0
-      ? filteredUsers.slice(indexOfFirstItem, indexOfLastItem)
-      : [];
+  const currentItems = (filteredUsers || []).slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
 
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  // Safely calculate total pages
+  const totalPages = Math.max(
+    1,
+    Math.ceil((filteredUsers || []).length / itemsPerPage)
+  );
 
   const handleChangeItemsPerPage = (event) => {
     const newItemsPerPage = parseInt(event.target.value);
@@ -103,12 +109,19 @@ export function ViewOntList() {
         config
       );
 
-      // Assuming responseData.data is the array of ONT names
-      setData(responseData.data);
-      setFilteredUsers(responseData.data);
+      // Ensure responseData.data is an array, default to empty array if not
+      const fetchedData = Array.isArray(responseData.data)
+        ? responseData.data
+        : [];
+
+      setData(fetchedData);
+      setFilteredUsers(fetchedData);
     } catch (error) {
-      console.log(error);
+      console.error(error);
       toast.error("Failed to fetch data");
+      // Set empty array in case of error
+      setData([]);
+      setFilteredUsers([]);
     } finally {
       setLoading(false);
     }
@@ -116,13 +129,13 @@ export function ViewOntList() {
 
   useEffect(() => {
     fetchData();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, deviceId]);
 
   const handleSearch = (value) => {
     if (!value) {
       setFilteredUsers(data);
     } else {
-      const filtered = data.filter((ontName) =>
+      const filtered = (data || []).filter((ontName) =>
         ontName.toLowerCase().includes(value.toLowerCase())
       );
       setFilteredUsers(filtered);
@@ -211,8 +224,8 @@ export function ViewOntList() {
       <CardFooter className="border-blue-gray-50 flex items-center justify-between border-t p-4">
         <div className="flex items-center">
           <p className="text-blue-gray-600 font-normal dark:text-white">
-            Page {currentPage} of {totalPages} - Total {filteredUsers.length}{" "}
-            Items
+            Page {currentPage} of {totalPages} - Total{" "}
+            {(filteredUsers || []).length} Items
           </p>
           <select
             className="border-blue-gray-50 ml-4 rounded border p-1 dark:bg-navy-700 dark:text-white"

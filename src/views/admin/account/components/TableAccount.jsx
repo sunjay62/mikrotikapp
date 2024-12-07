@@ -32,24 +32,19 @@ export function TableAccount() {
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [decodedToken, setDecodedToken] = useState({});
-  const [length, setLength] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // Calculate pagination values safely
-  const totalItems = filteredUsers?.length || 0;
-
+  // Safely calculate pagination values
   const [itemsPerPage, setItemsPerPage] = useState(5);
+  const totalItems = filteredUsers?.length || 0;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems =
-    filteredUsers.length > 0
-      ? filteredUsers.slice(indexOfFirstItem, indexOfLastItem)
-      : [];
 
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const currentItems = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
 
   const handleChangeItemsPerPage = (event) => {
-    const newItemsPerPage = parseInt(event.target.value);
+    const newItemsPerPage = parseInt(event.target.value, 10);
     setItemsPerPage(newItemsPerPage);
     setCurrentPage(1); // Reset to first page when changing items per page
   };
@@ -93,8 +88,8 @@ export function TableAccount() {
 
   useEffect(() => {
     if (data?.data) {
-      setFilteredUsers(data.data);
-      setLength(data.data.length);
+      // Safely set filtered users, defaulting to an empty array if data.data is undefined
+      setFilteredUsers(data.data || []);
       setLoading(false);
     }
   }, [data]);
@@ -103,10 +98,12 @@ export function TableAccount() {
     const accessToken = localStorage.getItem("access_token");
     if (accessToken) {
       try {
-        const decodedToken = jwtDecode(accessToken);
-        setDecodedToken(decodedToken);
+        const decoded = jwtDecode(accessToken);
+        setDecodedToken(decoded);
       } catch (error) {
         toast.error("Your session is expired, please login again.");
+        // Optionally clear the token
+        localStorage.removeItem("access_token");
       }
     }
   }, []);
@@ -138,12 +135,10 @@ export function TableAccount() {
             },
           };
 
-          const data = { username };
-
           await toast.promise(
             axios.delete(`${BASE_URL}/userlogin`, {
               ...config,
-              data,
+              data: { username },
             }),
             {
               pending: "Deleting ...",
@@ -161,22 +156,23 @@ export function TableAccount() {
   };
 
   const handleSearch = (value) => {
-    if (!data?.data) return;
+    // Safely handle search with default empty array
+    const allUsers = data?.data || [];
 
     if (!value) {
-      setFilteredUsers(data.data);
-      setLength(data.data.length);
-    } else {
-      const filtered = data.data.filter(
-        (user) =>
-          (user.role &&
-            user.role.toLowerCase().includes(value.toLowerCase())) ||
-          (user.username &&
-            user.username.toLowerCase().includes(value.toLowerCase()))
-      );
-      setFilteredUsers(filtered);
-      setLength(filtered.length);
+      setFilteredUsers(allUsers);
+      setCurrentPage(1);
+      return;
     }
+
+    const filtered = allUsers.filter(
+      (user) =>
+        (user.role && user.role.toLowerCase().includes(value.toLowerCase())) ||
+        (user.username &&
+          user.username.toLowerCase().includes(value.toLowerCase()))
+    );
+
+    setFilteredUsers(filtered);
     setCurrentPage(1);
   };
 
