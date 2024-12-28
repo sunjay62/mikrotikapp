@@ -21,7 +21,6 @@ const ViewDevice = () => {
     },
     sn: "",
     description: "",
-    uptime: "",
   });
 
   const navigate = useNavigate();
@@ -59,7 +58,6 @@ const ViewDevice = () => {
           site_name: "",
           sn: "",
           description: "",
-          uptime: "",
         });
       } else {
         setDeviceData({
@@ -70,7 +68,6 @@ const ViewDevice = () => {
           site_name: responseData.data.site_name || "",
           sn: responseData.data.sn || "",
           description: responseData.data.description || "",
-          uptime: responseData.data.uptime || "",
         });
       }
       setIsLoading(false);
@@ -98,25 +95,14 @@ const ViewDevice = () => {
         shadow={false}
         className="rounded-none dark:bg-navy-700 dark:text-white"
       >
-        <div className="mb-8 flex items-center justify-between gap-8">
+        <div className="flex items-center justify-between gap-8">
           <div>
             <h1 className="text-xl font-bold" color="blue-gray">
-              ONU Device Details
+              ONU Device Information
             </h1>
             <p color="gray" className="mt-1 font-normal">
-              Detailed information about the ONU device
+              Detailed about the ONU Device Information
             </p>
-          </div>
-        </div>
-        <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-          <div className="flex items-center gap-2 rounded-md border bg-blue-400 p-2 font-bold text-white ">
-            <GrTime />
-            <h1>Uptime </h1>:
-            {isLoading ? (
-              <Skeleton.Input active={true} size="small" />
-            ) : (
-              <p> {deviceData.uptime}</p>
-            )}
           </div>
         </div>
       </CardHeader>

@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { BASE_URL } from "libs/auth-api";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { BASE_URL_DEV } from "libs/auth-api";
 
 export const useData = () => {
   const navigate = useNavigate();
@@ -24,10 +23,7 @@ export const useData = () => {
           },
         };
 
-        const responseData = await axios.get(
-          `${BASE_URL_DEV}/userlogin`,
-          config
-        );
+        const responseData = await axios.get(`${BASE_URL}/userlogin`, config);
 
         return responseData.data;
       } catch (error) {

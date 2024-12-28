@@ -4,10 +4,10 @@ import ViewCard from "./components/ViewCard";
 import { Button, Card, CardHeader } from "@material-tailwind/react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeftIcon } from "@heroicons/react/24/solid";
-import ViewService from "./components/ViewService";
 import ViewUplink from "./components/ViewUplink";
 import ViewOntList from "./components/ViewOntList";
 import ViewVlan from "./components/ViewVlan";
+import OnuDetail from "./components/onu-detail";
 
 const ViewDetailDeviceOnt = () => {
   const [activeView, setActiveView] = useState("detail");
@@ -38,7 +38,7 @@ const ViewDetailDeviceOnt = () => {
               >
                 ONU Detail
               </Button>
-              <Button
+              {/* <Button
                 className={`w-36 p-2 ${
                   activeView === "onuservice"
                     ? "bg-blue-500 text-white"
@@ -47,6 +47,16 @@ const ViewDetailDeviceOnt = () => {
                 onClick={() => setActiveView("onuservice")}
               >
                 ONU Service
+              </Button> */}
+              <Button
+                className={`w-36 p-2 ${
+                  activeView === "servicevlan"
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-400 "
+                }`}
+                onClick={() => setActiveView("servicevlan")}
+              >
+                Service Vlan
               </Button>
 
               {/* Button for OLT Card
@@ -101,9 +111,10 @@ const ViewDetailDeviceOnt = () => {
           </div>
 
           {/* Conditionally render ViewDevice or ViewCard based on activeView */}
-          {activeView === "detail" && <ViewDevice />}
+          {activeView === "detail" && <OnuDetail />}
           {activeView === "card" && <ViewCard />}
-          {activeView === "onuservice" && <ViewService />}
+          {/* {activeView === "onuservice" && <ViewService />} */}
+          {activeView === "servicevlan" && <ViewVlan />}
           {activeView === "uplink" && <ViewUplink />}
           {activeView === "vlans" && <ViewVlan />}
           {activeView === "ontlist" && <ViewOntList />}

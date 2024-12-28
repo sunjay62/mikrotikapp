@@ -9,7 +9,7 @@ import {
   CardFooter,
   Input,
 } from "@material-tailwind/react";
-import { BASE_URL_DEV } from "libs/auth-api";
+import { BASE_URL } from "libs/auth-api";
 import { toast } from "react-toastify";
 import LoadingTable from "components/loading";
 import { jwtDecode } from "jwt-decode";
@@ -96,7 +96,7 @@ export function ViewService() {
       };
 
       const responseData = await axiosInstance.post(
-        `${BASE_URL_DEV}/olt/onu/configured/info`,
+        `${BASE_URL}/olt/onu/configured/info`,
         formData,
         config
       );

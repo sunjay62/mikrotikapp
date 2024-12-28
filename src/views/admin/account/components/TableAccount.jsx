@@ -18,102 +18,38 @@ import axios from "axios";
 import { BASE_URL } from "libs/auth-api";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
-import LoadingTable from "components/loading";
+import { BeatLoader } from "react-spinners";
 import { BsPlus } from "react-icons/bs";
-import { jwtDecode } from "jwt-decode";
+import { jwtDecode } from "jwt-decode"; // Corrected import statement
 
-const TABLE_HEAD = ["No", "Username", "Role", "Site Access", ""];
+const TABLE_HEAD = ["No", "Username", "Role", ""];
 
 export function TableAccount() {
   const [open, setOpen] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5);
   const { data, refetch } = useData();
   const [filteredUsers, setFilteredUsers] = useState([]);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const [selectedUsername, setSelectedUsername] = useState(null);
   const [decodedToken, setDecodedToken] = useState({});
-  const [loading, setLoading] = useState(true);
+  const [length, setLength] = useState("");
 
-  // Safely calculate pagination values
-  const [itemsPerPage, setItemsPerPage] = useState(5);
-  const totalItems = filteredUsers?.length || 0;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-
   const currentItems = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
 
-  const handleChangeItemsPerPage = (event) => {
-    const newItemsPerPage = parseInt(event.target.value, 10);
-    setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1); // Reset to first page when changing items per page
-  };
-
-  const renderPageNumbers = () => {
-    const pageNumbers = [];
-    const maxVisiblePages = 5;
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-    // Adjust start page if we're near the end
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      pageNumbers.push(
-        <Button
-          key={i}
-          variant={currentPage === i ? "filled" : "outlined"}
-          size="sm"
-          className={`px-3 ${
-            currentPage === i
-              ? "bg-blue-500 text-white dark:bg-blue-600"
-              : "dark:border-white dark:text-white"
-          }`}
-          onClick={() => paginate(i)}
-        >
-          {i}
-        </Button>
-      );
-    }
-    return pageNumbers;
-  };
-
-  const paginate = (pageNumber) => {
-    if (pageNumber >= 1 && pageNumber <= totalPages) {
-      setCurrentPage(pageNumber);
-    }
-  };
-
-  useEffect(() => {
-    if (data?.data) {
-      // Safely set filtered users, defaulting to an empty array if data.data is undefined
-      setFilteredUsers(data.data || []);
-      setLoading(false);
-    }
-  }, [data]);
-
-  useEffect(() => {
-    const accessToken = localStorage.getItem("access_token");
-    if (accessToken) {
-      try {
-        const decoded = jwtDecode(accessToken);
-        setDecodedToken(decoded);
-      } catch (error) {
-        toast.error("Your session is expired, please login again.");
-        // Optionally clear the token
-        localStorage.removeItem("access_token");
-      }
-    }
-  }, []);
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   const handleOpen = () => setOpen(!open);
 
-  const handleOpenEdit = (user) => {
-    setSelectedUser(user);
+  const handleOpenEdit = (username) => {
+    setSelectedUsername(username);
     setOpenEdit(!openEdit);
   };
+
+  console.log(data);
 
   const handleDelete = async (username) => {
     Swal.fire({
@@ -135,10 +71,12 @@ export function TableAccount() {
             },
           };
 
-          await toast.promise(
+          const data = { username: username };
+
+          const response = await toast.promise(
             axios.delete(`${BASE_URL}/userlogin`, {
               ...config,
-              data: { username },
+              data,
             }),
             {
               pending: "Deleting ...",
@@ -146,42 +84,63 @@ export function TableAccount() {
             }
           );
 
-          refetch();
+          if (response.status === 200) {
+            refetch();
+          }
         } catch (error) {
-          toast.error("Error deleting account");
-          console.error(error);
+          console.log(error);
         }
       }
     });
   };
 
   const handleSearch = (value) => {
-    // Safely handle search with default empty array
-    const allUsers = data?.data || [];
-
-    if (!value) {
-      setFilteredUsers(allUsers);
-      setCurrentPage(1);
-      return;
+    if (value === "" || value === null) {
+      setFilteredUsers(data.data);
+    } else {
+      const filtered = data.data.filter(
+        (user) =>
+          (user &&
+            user.role &&
+            user.role.toLowerCase().includes(value.toLowerCase())) ||
+          (user &&
+            user.username &&
+            user.username.toLowerCase().includes(value.toLowerCase()))
+      );
+      setFilteredUsers(filtered);
+      setLength(filtered.length);
     }
-
-    const filtered = allUsers.filter(
-      (user) =>
-        (user.role && user.role.toLowerCase().includes(value.toLowerCase())) ||
-        (user.username &&
-          user.username.toLowerCase().includes(value.toLowerCase()))
-    );
-
-    setFilteredUsers(filtered);
     setCurrentPage(1);
   };
 
-  const roleHidden =
-    decodedToken.role === "teknisi" || decodedToken.role === "admin";
+  useEffect(() => {
+    if (data) {
+      setFilteredUsers(data.data);
+      setDataLoaded(true);
+      setLength(data.data.length);
+    }
+  }, [data]);
+
+  useEffect(() => {
+    if (!dataLoaded) return;
+    setFilteredUsers(data.data);
+  }, [dataLoaded]);
+
+  useEffect(() => {
+    const accessToken = localStorage.getItem("access_token");
+    if (accessToken) {
+      try {
+        const decodedToken = jwtDecode(accessToken);
+        setDecodedToken(decodedToken);
+      } catch (error) {
+        toast.error("Your session is expired, please login again.");
+      }
+    }
+  }, []);
 
   return (
     <>
-      <Card className="mt-8 h-full w-full rounded-3xl dark:bg-navy-700 dark:text-white">
+      <Card className="mt-8 h-full w-full rounded-3xl  dark:bg-navy-700 dark:text-white">
         <CardHeader
           floated={false}
           shadow={false}
@@ -206,18 +165,16 @@ export function TableAccount() {
                 onChange={(e) => handleSearch(e.target.value)}
               />
             </div>
-            {!roleHidden && (
-              <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
-                <Button
-                  variant="outlined"
-                  size="sm"
-                  className="flex items-center gap-2 bg-blue-600 text-white dark:bg-brandLinear dark:text-white"
-                  onClick={handleOpen}
-                >
-                  <BsPlus strokeWidth={2} className="h-4 w-4" /> Add Account
-                </Button>
-              </div>
-            )}
+            <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+              <Button
+                variant="outlined"
+                size="sm"
+                className="flex items-center gap-2 bg-blue-600 text-white dark:bg-brandLinear dark:text-white"
+                onClick={handleOpen}
+              >
+                <BsPlus strokeWidth={2} className="h-4 w-4" /> Add Account
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardBody className="p-5">
@@ -240,28 +197,20 @@ export function TableAccount() {
                 ))}
               </tr>
             </thead>
-            {loading ? (
+            {dataLoaded ? (
               <tbody>
-                <tr>
-                  <td colSpan={TABLE_HEAD.length} className="p-4 text-center">
-                    <LoadingTable />
-                  </td>
-                </tr>
-              </tbody>
-            ) : (
-              <tbody>
-                {currentItems.map((user, index) => {
+                {currentItems.map(({ username, role }, index) => {
                   const actualIndex = indexOfFirstItem + index + 1;
                   const classes =
                     index === currentItems.length - 1
                       ? "p-4"
-                      : "p-4 border-blue-gray-50";
+                      : "p-4 border-b border-blue-gray-50";
 
                   const shouldHideDeleteButton =
-                    decodedToken.username === user.username;
+                    decodedToken.username === username;
 
                   return (
-                    <tr key={actualIndex} className="border-b">
+                    <tr key={actualIndex}>
                       <td className={classes}>
                         <div className="flex items-center gap-3">
                           <div className="flex flex-col">
@@ -283,7 +232,7 @@ export function TableAccount() {
                               color="blue-gray"
                               className="font-normal"
                             >
-                              {user.username}
+                              {username}
                             </p>
                           </div>
                         </div>
@@ -296,89 +245,53 @@ export function TableAccount() {
                               color="blue-gray"
                               className="font-normal"
                             >
-                              {user.role}
+                              {role}
                             </p>
                           </div>
                         </div>
                       </td>
 
-                      <td className={classes}>
-                        <div className="flex items-center gap-3">
-                          <div className="flex flex-col">
-                            {user.list_site_info?.length > 0 ? (
-                              user.list_site_info.map((site, index) => (
-                                <p
-                                  key={index}
-                                  variant="small"
-                                  color="blue-gray"
-                                  className="font-normal"
-                                >
-                                  {site.site_info.name} ({site.site_info.code})
-                                </p>
-                              ))
-                            ) : (
-                              <p
-                                variant="small"
-                                color="blue-gray"
-                                className="font-normal"
-                              >
-                                No site access
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-
-                      <td>
-                        <>
-                          <Tooltip content="Edit" className="bg-gray-700">
-                            <IconButton
-                              variant="text"
-                              className="ml-2 border bg-blue-50 hover:bg-blue-100 dark:bg-blue-800 dark:hover:bg-blue-200"
-                              onClick={() => handleOpenEdit(user)}
-                            >
-                              <PencilSquareIcon className="h-5 w-5 text-blue-400" />
-                            </IconButton>
-                          </Tooltip>
-
-                          {!shouldHideDeleteButton && !roleHidden && (
+                      <td className={`${classes} flex justify-end`}>
+                        <Tooltip content="Edit" className="bg-gray-700">
+                          <IconButton
+                            variant="text"
+                            className="mb-2 ml-2 border bg-blue-50 hover:bg-blue-100 dark:bg-blue-800 dark:hover:bg-blue-200"
+                            onClick={() => handleOpenEdit(username)}
+                          >
+                            <PencilSquareIcon className="h-5 w-5 text-blue-400" />
+                          </IconButton>
+                        </Tooltip>
+                        {!shouldHideDeleteButton && (
+                          <>
                             <Tooltip content="Delete" className="bg-gray-700">
                               <IconButton
                                 variant="text"
-                                className="dark:bg-red-00 ml-2 border bg-red-50 hover:bg-red-100 dark:hover:bg-blue-200"
-                                onClick={() => handleDelete(user.username)}
+                                className="mb-2 ml-2 border bg-red-50 hover:bg-red-100"
+                                onClick={() => handleDelete(username)}
                               >
-                                <TrashIcon className="h-5 w-5 text-red-500" />
+                                <TrashIcon className="h-5 w-5 text-red-400" />
                               </IconButton>
                             </Tooltip>
-                          )}
-                        </>
+                          </>
+                        )}
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
+            ) : (
+              <div className="ml-72 mt-10 flex h-full w-full items-center justify-center">
+                <BeatLoader color="#3B82F6" size={15} />
+              </div>
             )}
           </table>
         </CardBody>
         <CardFooter className="border-blue-gray-50 flex items-center justify-between border-t p-4">
-          <div className="flex items-center">
-            <p className="text-blue-gray-600 font-normal dark:text-white">
-              Page {currentPage} of {totalPages} - Total {filteredUsers.length}{" "}
-              Items
-            </p>
-            <select
-              className="border-blue-gray-50 ml-4 rounded border p-1 dark:bg-navy-700 dark:text-white"
-              value={itemsPerPage}
-              onChange={handleChangeItemsPerPage}
-            >
-              <option value={5}>5</option>
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
-          </div>
+          <p variant="small" color="blue-gray" className="font-normal">
+            Page {currentPage} of{" "}
+            {Math.ceil(filteredUsers.length / itemsPerPage)} - Total {length}{" "}
+            Items
+          </p>
           <div className="flex gap-2">
             <Button
               className="dark:border-white dark:text-white"
@@ -389,15 +302,16 @@ export function TableAccount() {
             >
               Previous
             </Button>
-
-            <div className="flex gap-1">{renderPageNumbers()}</div>
-
             <Button
               className="dark:border-white dark:text-white"
               variant="outlined"
               size="sm"
               onClick={() => paginate(currentPage + 1)}
-              disabled={currentPage === totalPages}
+              disabled={
+                currentPage ===
+                  Math.ceil(filteredUsers.length / itemsPerPage) ||
+                Math.ceil(filteredUsers.length / itemsPerPage) === 0
+              }
             >
               Next
             </Button>
@@ -405,15 +319,12 @@ export function TableAccount() {
         </CardFooter>
       </Card>
 
-      <AddAccount open={open} handleOpen={handleOpen} refetch={refetch} />
+      <AddAccount handleOpen={handleOpen} open={open} />
       <EditAccount
-        openEdit={openEdit}
         handleOpenEdit={handleOpenEdit}
-        refetch={refetch}
-        user={selectedUser}
+        openEdit={openEdit}
+        selectedUsername={selectedUsername}
       />
     </>
   );
 }
-
-export default TableAccount;
